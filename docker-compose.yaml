@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  web:
+    build: .
+    command: python3 manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/usr/src/app/
+    environment:
+      DOCKER_TLS_CERTDIR: ""
+      DOCKER_HOST: "tcp://docker:2375"
+    ports:
+      - 8000:8000
+
+  docker:
+    image: docker:19.03.13-dind
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: ""

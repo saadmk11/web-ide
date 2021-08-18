@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Web IDE</title>
+        <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.terminal/2.28.1/js/jquery.terminal.min.js"></script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/jquery.terminal/2.28.1/css/jquery.terminal.min.css" rel="stylesheet" />
+        <link
+                rel="stylesheet"
+                href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/codemirror.min.css"
+                integrity="sha512-xIf9AdJauwKIVtrVRZ0i4nHP61Ogx9fSRAkCLecmE2dL/U8ioWpDvFCAy4dcfecN72HHB9+7FfQj3aiO68aaaw=="
+                crossorigin="anonymous"
+                referrerpolicy="no-referrer"
+        />
+        <script
+                src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/codemirror.min.js"
+                integrity="sha512-6Q5cHfb86ZJ3qWx47Pw7P5CN1/pXcBMmz3G0bXLIQ67wOtRF7brCaK5QQLPz2CWLBqjWRNH+/bV5MwwWxFGxww=="
+                crossorigin="anonymous"
+                referrerpolicy="no-referrer"
+        ></script>
+        <script src="https://unpkg.com/js-polyfills@0.x.x/keyboard.js"></script>
+        <link
+                rel="stylesheet"
+                href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/theme/monokai.min.css"
+                integrity="sha512-R6PH4vSzF2Yxjdvb2p2FA06yWul+U0PDDav4b/od/oXf9Iw37zl10plvwOXelrjV2Ai7Eo3vyHeyFUjhXdBCVQ=="
+                crossorigin="anonymous"
+                referrerpolicy="no-referrer"
+        />
+        <script
+                src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/mode/python/python.min.js"
+                integrity="sha512-/mavDpedrvPG/0Grj2Ughxte/fsm42ZmZWWpHz1jCbzd5ECv8CB7PomGtw0NAnhHmE/lkDFkRMupjoohbKNA1Q=="
+                crossorigin="anonymous"
+                referrerpolicy="no-referrer"
+        ></script>
+        <style>
+            .terminal {
+                --color: #00ff00;
+                --background: #5e2750;
+                --animation: terminal-underline;
+                --size: 1.6;
+                height: 80vh;
+            }
+            .CodeMirror {
+                font-size: 19px;
+                height: 80vh;
+            }
+            .textEditor {
+                height: 80vh;
+                max-width: 1080px;
+            }
+            .terminalContainer {
+                height: 80vh;
+                max-width: 1080px;
+            }
+            .flex-container {
+                display: flex;
+            }
+            .flex-child {
+                flex: 1;
+                border: 2px solid black;
+            }
+            .flex-child:first-child {
+                margin-right: 20px;
+            }
+            .wrapper{
+                padding-top: 10px;
+            }
+
+            button {
+                background-color: #4CAF50;
+                border: none;
+                color: white;
+                padding: 15px 32px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 16px;
+                margin: 4px 2px;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+    <div><h1 style="text-align: center; vertical-align: middle; padding-top: 20px;">Online IDE (Python)</h1></div>
+    <div class="flex-container">
+        <div class="flex-child textEditor">
+            <textarea name="textEditorField" id="editor" required></textarea>
+            <div class="wrapper">
+                <button id="runCode" type="button"><span>Run on Terminal!</span></button>
+            </div>
+        </div>
+
+        <div class="flex-child terminalContainer">
+            <div id="term"></div>
+        </div>
+    </div>
+
+    <script>
+        let editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+            mode: "python",
+            lineNumbers: true,
+            styleActiveLine: true,
+            matchBrackets: true,
+            theme: "monokai",
+        });
+        let term = $("#term").terminal(
+            function (command) {
+                if (command !== "") {
+                    WebIDESocket.send(
+                        JSON.stringify({
+                            command: command,
+                            type: "terminal",
+                        })
+                    );
+                } else {
+                    this.echo("");
+                }
+            },
+            {
+                greetings: "Command Line",
+                prompt: "$ ",
+            }
+        );
+
+        $("#runCode").click(function (event) {
+            let value = editor.getValue()
+            if (value !== "") {
+                term.echo("Running Command.......\n");
+                WebIDESocket.send(
+                    JSON.stringify({
+                        command: editor.getValue(),
+                        type: "code",
+                    })
+                );
+            } else {
+                term.error("File is empty.......\n");
+            }
+        });
+
+        const WebIDESocket = new WebSocket("ws://" + window.location.host + "/ws/ide/");
+
+        WebIDESocket.onclose = function (e) {
+            term.error("Web IDE closed");
+        };
+        WebIDESocket.onmessage = function (e) {
+            term.echo(JSON.parse(e.data).message);
+        };
+    </script>
+    </body>
+</html>
