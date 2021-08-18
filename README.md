@@ -1,12 +1,18 @@
 # Web IDE
 
-#### :warning: This is not suitable for production environment :warning:
+#### :warning: This project is not suitable for production environment :warning:
 
 This is a simple Online IDE created using Django, Django Channels and Docker.
 It uses docker-in-docker (dind) to spin up docker containers for each user. 
 The code runs inside the users isolated docker container.
 
 Currently, it only supports python but more language support can be added easily.
+
+### Run Project
+
+```console
+docker-compose up --build
+```
 
 ### Demo:
 
